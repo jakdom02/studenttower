@@ -91,9 +91,9 @@ def scroll_world(walls, platforms, player, stars, bonuses):
         plat.floor_num = next_floor
         next_floor += 1
 
-        # calculate new x-position (FIXED)
+        # calculate new x-position (FIXED - ensure integer division)
         max_x = int((FLOOR_PIXEL_LENGTH - plat.length * 20) // 2)
-        new_x = random.randint(-max_x, max_x)
+        new_x = random.randint(-max_x, max_x) if max_x > 0 else 0
         plat.goto(new_x, new_y)
 
     # remove bonuses that have fallen off screen
@@ -147,7 +147,11 @@ def spawn_bonus(platforms, bonuses, player):
         # place bonus on the platform with some random horizontal offset
         # FIX: Convert to integer to avoid float error with randint
         max_offset = int(chosen_platform.length * 8)
-        bonus_x = chosen_platform.xcor() + random.randint(-max_offset, max_offset)
+        # Ensure max_offset is positive to avoid randint errors
+        if max_offset > 0:
+            bonus_x = chosen_platform.xcor() + random.randint(-max_offset, max_offset)
+        else:
+            bonus_x = chosen_platform.xcor()
         bonus_y = chosen_platform.ycor() + HALF_PLAT_SIZE + 20  # Slightly above platform
 
         bonus = Bonus(bonus_x, bonus_y)
@@ -246,8 +250,10 @@ def update_score(player, platforms, score_display):
 
     # update score if higher floor is found
     if best_floor > player.highest_floor:
+        # C\calculate the floor score difference and add it to current score
+        floor_score_increase = (best_floor - player.highest_floor) * 100
+        score_display.score += floor_score_increase  # add to existing score instead of overwriting
         player.highest_floor = best_floor
-        score_display.score = best_floor * 100
 
     # increase scroll speed every 3000 points (difficulty scaling)
     if (score_display.score >= player.scroll_speed_threshold and
@@ -295,8 +301,9 @@ def create_platforms():
 
     for i in range(30):
         length = random.randint(6, 12)
+        # FIX: Ensure integer values for randint
         max_x = int((FLOOR_PIXEL_LENGTH - length * 20) // 2)
-        plat_x = random.randint(-max_x, max_x)
+        plat_x = random.randint(-max_x, max_x) if max_x > 0 else 0
         plat_y = GROUND_Y + (i + 1) * PLATFORM_GAP
 
         platform = Platform(plat_x, plat_y, length)
